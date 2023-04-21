@@ -109,7 +109,7 @@ int main(int argc, char** argv){
     double curr_pos_x = init_pos_x;
     double curr_pos_y = init_pos_y;
     double curr_pos_z = init_pos_z;
-    double curr_speed = target_speed;
+    double curr_target_speed = target_speed;
     // The flag for reaching the search boundary 
     bool reached_end_x = false;
     bool reached_end_y = false;
@@ -192,8 +192,8 @@ int main(int argc, char** argv){
         {
             if(flagX == 0)
             {
-                target_speed = -target_speed;
-                cmd_vel.twist.linear.x = target_speed;
+                curr_target_speed = -curr_target_speed;
+                cmd_vel.twist.linear.x = curr_target_speed;
                 //cmd_vel.twist.angular.y = 180.0;
                 flagX = 1;
                 ROS_INFO("I reach the X end!");
@@ -209,7 +209,7 @@ int main(int argc, char** argv){
         {
             if(flagY == 0)
             {
-                cmd_vel.twist.linear.y = -target_speed;
+                cmd_vel.twist.linear.y = -curr_target_speed;
                 cmd_vel.twist.angular.y = -90.0;
                 flagY = 1;
                 ROS_INFO("I reach the Y end!");
