@@ -121,20 +121,30 @@ int main(int argc, char** argv){
     cmd_vel.twist.angular.y = 0.0;
     cmd_vel.twist.angular.z = 0.0;
 
+<<<<<<< HEAD
     mavros_msgs::SetMode offb_set_mode;
     offb_set_mode.request.custom_mode = "OFFBOARD";
 
     mavros_msgs::CommandBool arm_cmd;
     arm_cmd.request.value = true;
+=======
+    //转向标志
+    int flagX = 0;
+    //int flagY = 0;
+>>>>>>> test
 
     ros::Rate rate(20.0);
 
     
     ros::Time last_request = ros::Time::now();
 
+<<<<<<< HEAD
     //转向标志
     int flagX = 0;
     int flagY = 0;
+=======
+    
+>>>>>>> test
 
 
     while(ros::ok())
