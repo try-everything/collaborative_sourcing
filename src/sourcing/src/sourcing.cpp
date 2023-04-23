@@ -158,6 +158,7 @@ int main(int argc, char** argv){
     //转向标志
     int flagX = 0;
     //int flagY = 0;
+    // test
 
     ros::Rate rate(20.0);
 
