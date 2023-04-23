@@ -1,6 +1,6 @@
 /*************************************************************************
 @file           sourcing.cpp
-@date           2023/04/20 16:06
+@date           2023/04/23 14:46
 @author         wuminjiang
 @email          wuminjiang@sia.cn
 @description    a state machine for mission of collaborate sourcing
@@ -36,21 +36,30 @@ geometry_msgs::TwistStamped current_velocity;
 geometry_msgs::TwistStamped cmd_vel;
 
 //srv data subscribed
-sourcing::Concentration concentration_srv;
+//sourcing::Concentration concentration_srv;
 
 
 /***********************const variable definition************************/
 // 设置覆盖搜索任务的目标点和速度
 static const double search_area_x = 5.0; // 搜索区域的x边长
 static const double search_area_y = 5.0; // 搜索区域的y边长
-static const double target_height = 0.4; // 目标搜索高度
+static const double target_height = 1.0; // 目标搜索高度
 static const double target_speed = 1.0; // 目标搜索速度
 static const double target_pitch = 0.0; // 目标搜索俯仰角
 
 
 /***************************variable definition**************************/
 //float concentrationMap[2000][1000];
-
+// The initial position
+double init_pos_x;
+double init_pos_y;
+double init_pos_z;
+double curr_pos_x;
+double curr_pos_y;
+double curr_pos_z;
+double curr_target_speed;
+// The flag for reaching the search boundary 
+bool reached_end_x;
 
 
 /************************callback function definition********************/
@@ -67,8 +76,28 @@ void velocity_cb(const geometry_msgs::TwistStamped::ConstPtr& msg){
 }
 
 
-/****************************function declare****************************/
+/****************************function define*****************************/
 
+
+
+/*********************computational function define**********************/
+// Get the concentration at pose
+float getConcentration(geometry_msgs::PoseStamped pose)
+{
+    sourcing::Concentration concentration_srv;
+    concentration_srv.request.x = pose.pose.position.x + 1000;
+    concentration_srv.request.y = pose.pose.position.y;
+    concentration_srv.request.z = pose.pose.position.z - 1;
+    if(concentration_client.call(concentration_srv))
+    {
+        ROS_INFO("The concentration is : %f", concentration_srv.response.concentration);
+    }
+    else
+    {
+        ROS_ERROR("Failed to call service concentration");
+    }
+    return (concentration_srv.response.concentration);
+}
 
 
 /****************************main function*******************************/
@@ -85,7 +114,6 @@ int main(int argc, char** argv){
     // Publisher
     cmd_vel_pub = nh.advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 10);
 
-
     // client
     arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
     set_mode_client = nh.serviceClient<mavros_msgs::SetMode>("mavros/set_mode");
@@ -96,23 +124,29 @@ int main(int argc, char** argv){
     cmd_vel.header.frame_id = "map";
 
     // 等待mavros节点连接到飞控
-    while(ros::ok() && !current_state.connected){
+    while(ros::ok() && !current_state.connected)
+    {
         ros::spinOnce();
         ros::Rate(1).sleep();
     }
 
-    //test
+    mavros_msgs::SetMode offb_set_mode;
+    offb_set_mode.request.custom_mode = "OFFBOARD";
+
+    mavros_msgs::CommandBool arm_cmd;
+    arm_cmd.request.value = true;
+
     // The initial position
-    double init_pos_x = current_pose.pose.position.x;
-    double init_pos_y = current_pose.pose.position.y;
-    double init_pos_z = current_pose.pose.position.z;
-    double curr_pos_x = init_pos_x;
-    double curr_pos_y = init_pos_y;
-    double curr_pos_z = init_pos_z;
-    double curr_target_speed = target_speed;
+    init_pos_x = current_pose.pose.position.x;
+    init_pos_y = current_pose.pose.position.y;
+    init_pos_z = current_pose.pose.position.z;
+    curr_pos_x = init_pos_x;
+    curr_pos_y = init_pos_y;
+    curr_pos_z = init_pos_z;
+    curr_target_speed = target_speed;
     // The flag for reaching the search boundary 
-    bool reached_end_x = false;
-    bool reached_end_y = false;
+    reached_end_x = false;
+
     // 定位到初始搜索位置
     cmd_vel.twist.linear.x = target_speed;
     cmd_vel.twist.linear.y = 0.0;
@@ -121,6 +155,7 @@ int main(int argc, char** argv){
     cmd_vel.twist.angular.y = 0.0;
     cmd_vel.twist.angular.z = 0.0;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     mavros_msgs::SetMode offb_set_mode;
     offb_set_mode.request.custom_mode = "OFFBOARD";
@@ -132,6 +167,9 @@ int main(int argc, char** argv){
     int flagX = 0;
     //int flagY = 0;
 >>>>>>> test
+=======
+    
+>>>>>>> 2df11856e47f88eb411dfe129965a119fb411ce8
 
     ros::Rate rate(20.0);
 
@@ -141,10 +179,14 @@ int main(int argc, char** argv){
 <<<<<<< HEAD
     //转向标志
     int flagX = 0;
+<<<<<<< HEAD
     int flagY = 0;
 =======
     
 >>>>>>> test
+=======
+    //int flagY = 0;
+>>>>>>> 2df11856e47f88eb411dfe129965a119fb411ce8
 
 
     while(ros::ok())
@@ -173,29 +215,15 @@ int main(int argc, char** argv){
 
         // Update current position
         curr_pos_x = current_pose.pose.position.x;
-        curr_pos_y = current_pose.pose.position.y;
+        //curr_pos_y = current_pose.pose.position.y;
         curr_pos_z = current_pose.pose.position.z;
-        // Get the concentration
-        concentration_srv.request.x = curr_pos_x + 1000;
-        concentration_srv.request.y = curr_pos_y ;
-        concentration_srv.request.z = curr_pos_z;
-        if(concentration_client.call(concentration_srv))
-        {
-            ROS_INFO("The concentration is : %f", concentration_srv.response.concentration);
-        }
-        else
-        {
-            ROS_ERROR("Failed to call service concentration");
-        }
 
 
         // 检查是否到达搜索区域边界
         if (abs(curr_pos_x - init_pos_x) >= search_area_x / 2.0){
             reached_end_x = true;
         }
-        if (abs(curr_pos_y - init_pos_y) >= search_area_y / 2.0){
-            reached_end_y = true;
-        }
+        
 
         // 如果到达搜索区域边界，则转向反方向继续搜索
         if (reached_end_x)
@@ -204,7 +232,6 @@ int main(int argc, char** argv){
             {
                 curr_target_speed = -curr_target_speed;
                 cmd_vel.twist.linear.x = curr_target_speed;
-                //cmd_vel.twist.angular.y = 180.0;
                 flagX = 1;
                 ROS_INFO("I reach the X end!");
             } 
@@ -215,27 +242,15 @@ int main(int argc, char** argv){
                 ROS_INFO("I am back!");
             }  
         }
-        if (reached_end_y)
-        {
-            if(flagY == 0)
-            {
-                cmd_vel.twist.linear.y = -curr_target_speed;
-                cmd_vel.twist.angular.y = -90.0;
-                flagY = 1;
-                ROS_INFO("I reach the Y end!");
-            }
-            else if(abs(curr_pos_y - init_pos_y) < search_area_x / 2.0)
-            {
-                flagY = 0;
-                reached_end_y = false;
-            }  
-        }
 
 
         // 如果当前高度不等于目标高度，则调整高度
-        if (curr_pos_z != target_height){
+        if (curr_pos_z != target_height)
+        {
             cmd_vel.twist.linear.z = (target_height - curr_pos_z) * 0.5;
-        }else{
+        }
+        else
+        {
             cmd_vel.twist.linear.z = 0.0;
         }
 
