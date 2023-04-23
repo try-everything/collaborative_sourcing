@@ -155,38 +155,16 @@ int main(int argc, char** argv){
     cmd_vel.twist.angular.y = 0.0;
     cmd_vel.twist.angular.z = 0.0;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    mavros_msgs::SetMode offb_set_mode;
-    offb_set_mode.request.custom_mode = "OFFBOARD";
-
-    mavros_msgs::CommandBool arm_cmd;
-    arm_cmd.request.value = true;
-=======
     //转向标志
     int flagX = 0;
     //int flagY = 0;
->>>>>>> test
-=======
-    
->>>>>>> 2df11856e47f88eb411dfe129965a119fb411ce8
 
     ros::Rate rate(20.0);
 
     
     ros::Time last_request = ros::Time::now();
 
-<<<<<<< HEAD
-    //转向标志
-    int flagX = 0;
-<<<<<<< HEAD
-    int flagY = 0;
-=======
     
->>>>>>> test
-=======
-    //int flagY = 0;
->>>>>>> 2df11856e47f88eb411dfe129965a119fb411ce8
 
 
     while(ros::ok())
