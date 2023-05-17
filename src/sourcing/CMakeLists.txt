@@ -212,4 +212,6 @@ add_executable(sourcing src/sourcing.cpp)
 target_link_libraries(sourcing ${catkin_LIBRARIES})
 add_dependencies(sourcing ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-
+add_executable(multi_uav_demo src/multi_uav_demo.cpp)
+target_link_libraries(multi_uav_demo ${catkin_LIBRARIES})
+add_dependencies(multi_uav_demo ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
