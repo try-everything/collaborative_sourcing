@@ -136,7 +136,7 @@ float getConcentration(geometry_msgs::PoseStamped pose)
 /****************************main function*******************************/
 int main(int argc, char** argv){
     // ROS node init
-    ros::init(argc, argv, "multi_uav_demo_node");
+    ros::init(argc, argv, "collaborative_sourcing");
     ros::NodeHandle nh;
 
     //position of A
@@ -228,13 +228,18 @@ int main(int argc, char** argv){
     ros::Time last_request = ros::Time::now();
 
     //firstly switch to position control mode before switch to offboard mode
-    while(ros::ok() && uav0_current_state.mode != "POSCTL")
+    while(ros::ok() && 
+        (uav0_current_state.mode != "POSCTL" || 
+        uav1_current_state.mode != "POSCTL" || 
+        uav2_current_state.mode != "POSCTL"))
     {
         if(ros::Time::now() - last_request > ros::Duration(5.0))
         {
-            if(uav0_set_mode_client_posctl.call(posc_set_mode) && posc_set_mode.response.mode_sent)
+            if(uav0_set_mode_client_posctl.call(posc_set_mode) && posc_set_mode.response.mode_sent && 
+            uav1_set_mode_client_posctl.call(posc_set_mode) && posc_set_mode.response.mode_sent && 
+            uav2_set_mode_client_posctl.call(posc_set_mode) && posc_set_mode.response.mode_sent)
             {
-                ROS_INFO("position control enabled");
+                ROS_INFO("Position control enabled");
             }
             last_request = ros::Time::now();
         }
