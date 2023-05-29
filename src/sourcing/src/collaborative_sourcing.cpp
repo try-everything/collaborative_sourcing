@@ -1,7 +1,7 @@
 /*************************************************************************
 @file           collaborative_sourcing.cpp
 @date           2023/05/18 15:05
-                2023/05/29 20:05
+                2023/05/29 23:00
 @author         wuminjiang
 @email          wuminjiang@sia.cn
 @description    a state machine for collaborative sourcing by 3 UAVs.
@@ -61,6 +61,9 @@ geometry_msgs::TwistStamped uav2_current_velocity;
 // geometry_msgs::PoseStamped uav0_pose_pub;
 // geometry_msgs::PoseStamped uav1_pose_pub;
 // geometry_msgs::PoseStamped uav2_pose_pub;
+geometry_msgs::PoseStamped position_A;
+geometry_msgs::PoseStamped position_B;
+geometry_msgs::PoseStamped position_C;
 geometry_msgs::TwistStamped uav0_cmd_vel;
 geometry_msgs::TwistStamped uav1_cmd_vel;
 geometry_msgs::TwistStamped uav2_cmd_vel;
@@ -72,16 +75,20 @@ geometry_msgs::TwistStamped uav2_cmd_vel;
 #define NS1 "uav1"
 #define NS2 "uav2"
 
-// states
-static const int takeoff = 1;
+static const float TAKEOFF_VELOCITY = 1.0;
 
+// states
+static const int TakeOff = 1;
+static const int UnknowAreaSearch = 2;
+static const int BoundarySearch = 3;
+static const int SourceSearch = 4;
+static const int FineCoverage = 5;
+static const int Land = 10;
 
 /***************************variable definition**************************/
-int current_mission_state = takeoff;
+int current_mission_state = TakeOff;
 
-geometry_msgs::PoseStamped position_A;
-geometry_msgs::PoseStamped position_B;
-geometry_msgs::PoseStamped position_C;
+
 
 /************************callback function definition********************/
 void uav0_state_cb(const mavros_msgs::State::ConstPtr& msg){
@@ -115,8 +122,59 @@ void uav2_velocity_cb(const geometry_msgs::TwistStamped::ConstPtr& msg){
 }
 
 /****************************function define*****************************/
+void stateMachineFunction()
+{
+    switch(current_mission_state)
+    {
+        case TakeOff:
+        {
+            
+        }
+        break;
+        case UnknowAreaSearch:
+        {
+            unknowAreaSearchFunction();
+        }
+        break;
+        case BoundarySearch:
+        {
+            boundarySearchFunction();
+        }
+        break;
+        case SourceSearch:
+        {
+            sourceSearchFunction();
+        }
+        break;
+        case FineCoverage:
+        {
+            fineCoverageFunction();
+        }
+        break;
 
+        case Land:
+        break;
+    }
+}
 
+void unknowAreaSearchFunction()
+{
+
+}
+
+void boundarySearchFunction()
+{
+
+}
+void sourceSearchFunction()
+{
+
+}
+
+void fineCoverageFunction()
+{
+
+}
 
 /*********************computational function define**********************/
 // Get the concentration at pose
@@ -252,9 +310,9 @@ int main(int argc, char** argv){
         rate.sleep();
     }
 
-    uav0_cmd_vel.twist.linear.z = 1.0;
-    uav1_cmd_vel.twist.linear.z = 1.0;
-    uav2_cmd_vel.twist.linear.z = 1.0;
+    uav0_cmd_vel.twist.linear.z = TAKEOFF_VELOCITY;
+    uav1_cmd_vel.twist.linear.z = TAKEOFF_VELOCITY;
+    uav2_cmd_vel.twist.linear.z = TAKEOFF_VELOCITY;
     //send a few setpoints before starting
     for(int i = 10; ros::ok() && i > 0; --i)
     {
@@ -266,64 +324,105 @@ int main(int argc, char** argv){
     }
 
 
-    mavros_msgs::SetMode offb_set_mode;
-    offb_set_mode.request.custom_mode = "OFFBOARD";
+    mavros_msgs::SetMode set_mode;
+    set_mode.request.custom_mode = "OFFBOARD";
 
     mavros_msgs::CommandBool arm_cmd;
     arm_cmd.request.value = true;
-    
+      
     
     last_request = ros::Time::now();
 
 
     while(ros::ok())
     {
+        // if offboard, armed, state machine
+        if(uav0_current_state.mode == "OFFBOARD" && uav0_current_state.armed &&
+        uav1_current_state.mode == "OFFBOARD" && uav1_current_state.armed &&
+        uav2_current_state.mode == "OFFBOARD" && uav2_current_state.armed)
+        {
+            stateMachineFunction();
+        }
+        else if(current_mission_state == TakeOff)
+        {
+            // before take off
+            
+            // uav0_cmd_vel_pub.publish(uav0_cmd_vel);
+            // uav1_cmd_vel_pub.publish(uav1_cmd_vel);
+            // uav2_cmd_vel_pub.publish(uav2_cmd_vel);
+            uav0_local_pos_pub.publish(position_A);
+            uav1_local_pos_pub.publish(position_B);
+            uav2_local_pos_pub.publish(position_C);
+        }
+
+
+
         // If not, switch to OFFBOARD mode and make vehicle armed
-        // wait to add a start flag
-        if( uav0_current_state.mode != "OFFBOARD" &&
+        if( current_mission_state == TakeOff &&
+        uav0_current_state.mode != "OFFBOARD" &&
         uav1_current_state.mode != "OFFBOARD" &&
         uav2_current_state.mode != "OFFBOARD" &&
         (ros::Time::now() - last_request > ros::Duration(5.0)))
         {
-            if( uav0_set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent && 
-            uav1_set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent && 
-            uav2_set_mode_client.call(offb_set_mode) && offb_set_mode.response.mode_sent) 
+            if( uav0_set_mode_client.call(set_mode) && set_mode.response.mode_sent && 
+            uav1_set_mode_client.call(set_mode) && set_mode.response.mode_sent && 
+            uav2_set_mode_client.call(set_mode) && set_mode.response.mode_sent) 
             {
             ROS_INFO("Offboard enabled");
             }
             last_request = ros::Time::now();
         }
-        else 
+        else if( !uav0_current_state.armed && !uav1_current_state.armed && !uav2_current_state.armed && 
+        (ros::Time::now() - last_request > ros::Duration(5.0))) 
         {
-            if( !uav0_current_state.armed && !uav1_current_state.armed && !uav2_current_state.armed && 
-            (ros::Time::now() - last_request > ros::Duration(5.0))) 
+            if( !uav0_current_state.armed && uav0_arming_client.call(arm_cmd) && arm_cmd.response.success) 
             {
-                if( !uav0_current_state.armed && uav0_arming_client.call(arm_cmd) && arm_cmd.response.success) 
-                {
-                    ROS_INFO("uav0 armed");
-                }
-                if( !uav1_current_state.armed && uav1_arming_client.call(arm_cmd) && arm_cmd.response.success)
-                {
-                    ROS_INFO("uav1 armed");
-                }
-                if( !uav2_current_state.armed && uav2_arming_client.call(arm_cmd) && arm_cmd.response.success)
-                {
-                    ROS_INFO("uav2 armed");
-                }
-                last_request = ros::Time::now();
+                ROS_INFO("uav0 armed");
             }
+            if( !uav1_current_state.armed && uav1_arming_client.call(arm_cmd) && arm_cmd.response.success)
+            {
+                ROS_INFO("uav1 armed");
+            }
+            if( !uav2_current_state.armed && uav2_arming_client.call(arm_cmd) && arm_cmd.response.success)
+            {
+                ROS_INFO("uav2 armed");
+            }
+            last_request = ros::Time::now();
         }
-        // else
-        // before take off
-        // 发布控制指令
-        uav0_local_pos_pub.publish(position_A);
-        uav1_local_pos_pub.publish(position_B);
-        uav2_local_pos_pub.publish(position_C);
-
-        // if offboard, armed, state machine
+        
 
         // switch to land mode
+        if((uav0_current_state.armed || uav1_current_state.armed ||
+        uav2_current_state.armed) && current_mission_state == Land)
+        {
+            set_mode.request.custom_mode = "AUTO.LAND";
+            if(ros::Time::now() - last_request > ros::Duration(5.0))
+            {
+                if(uav0_current_state.mode != "MANUAL" && uav0_current_state.mode != "AUTO.LAND")
+                {
+                    if(uav0_set_mode_client.call(set_mode) && set_mode.response.mode_sent)
+                    {
+                        ROS_INFO("UAV0 AUTO LANDING"); 
+                    }
+                }
+                if(uav1_current_state.mode != "MANUAL" && uav1_current_state.mode != "AUTO.LAND")
+                {
+                    if(uav1_set_mode_client.call(set_mode) && set_mode.response.mode_sent)
+                    {
+                        ROS_INFO("UAV1 AUTO LANDING"); 
+                    }
+                }
+                if(uav2_current_state.mode != "MANUAL" && uav2_current_state.mode != "AUTO.LAND")
+                {
+                    if(uav2_set_mode_client.call(set_mode) && set_mode.response.mode_sent)
+                    {
+                        ROS_INFO("UAV2 AUTO LANDING"); 
+                    }
+                }
 
+                last_request = ros::Time::now();
+            } 
+        }
 
 
         ros::spinOnce();
