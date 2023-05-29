@@ -72,7 +72,12 @@ geometry_msgs::TwistStamped uav2_cmd_vel;
 #define NS1 "uav1"
 #define NS2 "uav2"
 
+// states
+static const int takeoff = 1;
+
+
 /***************************variable definition**************************/
+int current_mission_state = takeoff;
 
 geometry_msgs::PoseStamped position_A;
 geometry_msgs::PoseStamped position_B;
@@ -274,6 +279,7 @@ int main(int argc, char** argv){
     while(ros::ok())
     {
         // If not, switch to OFFBOARD mode and make vehicle armed
+        // wait to add a start flag
         if( uav0_current_state.mode != "OFFBOARD" &&
         uav1_current_state.mode != "OFFBOARD" &&
         uav2_current_state.mode != "OFFBOARD" &&
@@ -307,6 +313,12 @@ int main(int argc, char** argv){
                 last_request = ros::Time::now();
             }
         }
+        // else state machine
+
+        // switch to land mode
+
+
+        // before take off
         // 发布控制指令
         uav0_local_pos_pub.publish(position_A);
         uav1_local_pos_pub.publish(position_B);
