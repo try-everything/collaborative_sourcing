@@ -1,7 +1,7 @@
 /*************************************************************************
 @file           collaborative_sourcing.cpp
 @date           2023/05/18 15:05
-                2023/05/18 17:05
+                2023/05/29 20:05
 @author         wuminjiang
 @email          wuminjiang@sia.cn
 @description    a state machine for collaborative sourcing by 3 UAVs.
@@ -313,16 +313,17 @@ int main(int argc, char** argv){
                 last_request = ros::Time::now();
             }
         }
-        // else state machine
-
-        // switch to land mode
-
-
+        // else
         // before take off
         // 发布控制指令
         uav0_local_pos_pub.publish(position_A);
         uav1_local_pos_pub.publish(position_B);
         uav2_local_pos_pub.publish(position_C);
+
+        // if offboard, armed, state machine
+
+        // switch to land mode
+
 
 
         ros::spinOnce();
