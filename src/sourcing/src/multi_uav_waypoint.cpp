@@ -94,9 +94,9 @@ geometry_msgs::PoseStamped uav0_waypoint[WaypointNumber0];
 geometry_msgs::PoseStamped uav1_waypoint[WaypointNumber1];
 geometry_msgs::PoseStamped uav2_waypoint[WaypointNumber2];
 
-flaot WaypointTest0[WaypointNumber0][3] = {0};
-flaot WaypointTest1[WaypointNumber1][3] = {0};
-flaot WaypointTest2[WaypointNumber2][3] = {0};
+float WaypointTest0[WaypointNumber0][3] = {0};
+float WaypointTest1[WaypointNumber1][3] = {0};
+float WaypointTest2[WaypointNumber2][3] = {0};
 
 ros::Time CurrentTime;
 ros::Time StartTime;
@@ -138,6 +138,9 @@ void uav2_velocity_cb(const geometry_msgs::TwistStamped::ConstPtr& msg){
 }
 
 /****************************function define*****************************/
+void approachFunction();
+void followWaypointFunction();
+
 void getWaypointFunction()
 {
     if(TEST == 1)
@@ -177,7 +180,7 @@ void stateMachineFunction()
             approachFunction();
         }
         break;
-        case UnknowAreaSearch:
+        case FollowWaypoint:
         {
             followWaypointFunction();
         }
@@ -255,29 +258,29 @@ void followWaypointFunction()
 
     if(i >= 0 && i < WaypointNumber0)
     {
-        uav0_local_pos_pub(uav0_waypoint[i]);
+        uav0_local_pos_pub.publish(uav0_waypoint[i]);
     }
     else
     {
-        uav0_local_pos_pub(uav0_waypoint[WaypointNumber0 - 1]);
+        uav0_local_pos_pub.publish(uav0_waypoint[WaypointNumber0 - 1]);
     }
 
     if(i >= 0 && i < WaypointNumber1)
     {
-        uav1_local_pos_pub(uav1_waypoint[i]);
+        uav1_local_pos_pub.publish(uav1_waypoint[i]);
     }
     else
     {
-        uav1_local_pos_pub(uav1_waypoint[WaypointNumber1 - 1]);
+        uav1_local_pos_pub.publish(uav1_waypoint[WaypointNumber1 - 1]);
     }
 
     if(i >= 0 && i < WaypointNumber2)
     {
-        uav2_local_pos_pub(uav2_waypoint[i]);
+        uav2_local_pos_pub.publish(uav2_waypoint[i]);
     }
     else
     {
-        uav2_local_pos_pub(uav2_waypoint[WaypointNumber2 - 1]);
+        uav2_local_pos_pub.publish(uav2_waypoint[WaypointNumber2 - 1]);
     }
 }
 
