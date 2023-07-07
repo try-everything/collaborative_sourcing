@@ -122,13 +122,14 @@ int main(int argc, char** argv){
 
 
     cmd_vel.header.frame_id = "map";
-
+    ROS_INFO("Wait connect!");
     // 等待mavros节点连接到飞控
     while(ros::ok() && !current_state.connected)
     {
         ros::spinOnce();
         ros::Rate(1).sleep();
     }
+    ROS_INFO("Connect success!");
 
     mavros_msgs::SetMode offb_set_mode;
     offb_set_mode.request.custom_mode = "OFFBOARD";

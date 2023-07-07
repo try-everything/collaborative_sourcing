@@ -1,7 +1,7 @@
 /*************************************************************************
 @file           multi_uav_demo.cpp
 @date           2023/06/30 11:42
-                2023/07/06 11:43
+                2023/07/06 15:36
 @author         wuminjiang
 @email          wuminjiang@sia.cn
 @description    a state machine demo for testing that one node controls 3
