@@ -58,9 +58,11 @@ geometry_msgs::TwistStamped uav2_cmd_vel;
 
 //coordinate alignment
 float XDistance10 = 5.0;
-float Ydistance10 = 0.0;
+float YDistance10 = 0.0;
+float ZDistance10 = 0.0;
 float XDistance20 = 10.0;
-float Ydistance20 = 0.0;
+float YDistance20 = 0.0;
+float ZDistance20 = 0.0;
 
 #define TEST 1
 
@@ -68,12 +70,12 @@ float Ydistance20 = 0.0;
 static const int Approach = 1;
 static const int FollowWaypoint = 2;
 
-static const float UnitTime = 1.0;
+static const float UnitTime = 5.0;
 
 #define ApproachNumber 10
-#define WaypointNumber0 500
-#define WaypointNumber1 500
-#define WaypointNumber2 500
+#define WaypointNumber0 4
+#define WaypointNumber1 4
+#define WaypointNumber2 4
 
 /***************************variable definition**************************/
 
@@ -94,17 +96,24 @@ geometry_msgs::PoseStamped uav0_waypoint[WaypointNumber0];
 geometry_msgs::PoseStamped uav1_waypoint[WaypointNumber1];
 geometry_msgs::PoseStamped uav2_waypoint[WaypointNumber2];
 
+#if TEST == 1
+float WaypointTest0[WaypointNumber0][3] = {{5, 10, 1}, {4, 11, 1}, {6, 13, 1}, {0, 15, 1}};
+float WaypointTest1[WaypointNumber1][3] = {{10, 10, 2}, {9, 11, 2}, {11, 13, 2}, {5, 15, 2}};
+float WaypointTest2[WaypointNumber2][3] = {{15, 10, 3}, {14, 11, 3}, {16, 13, 3}, {10, 15, 3}};
+#else
 float WaypointTest0[WaypointNumber0][3] = {0};
 float WaypointTest1[WaypointNumber1][3] = {0};
 float WaypointTest2[WaypointNumber2][3] = {0};
+#endif
+
 
 ros::Time CurrentTime;
 ros::Time StartTime;
 
 //different height to avoid collision
-float Uav0Height = 5.0;
-float Uav1Height = 10.0;
-float Uav2Height = 15.0;
+float Uav0Height = 1.0;
+float Uav1Height = 2.0;
+float Uav2Height = 3.0;
 
 /************************callback function definition********************/
 void uav0_state_cb(const mavros_msgs::State::ConstPtr& msg){
@@ -164,6 +173,7 @@ void getWaypointFunction()
             uav2_waypoint[i].pose.position.z = WaypointTest2[i][2];
         }
         WaypointReady = 1;
+        ROS_INFO("Waypoint position is ready!");
     }
     else
     {
@@ -202,15 +212,16 @@ void approachFunction()
             uav0_approach_position[i].pose.position.z = Uav0Height;
 
             uav1_approach_position[i].pose.position.x = uav1_current_pose.pose.position.x + (i+1) * (uav1_waypoint[0].pose.position.x - XDistance10 - uav1_current_pose.pose.position.x) / ApproachNumber;
-            uav1_approach_position[i].pose.position.y = uav1_current_pose.pose.position.y + (i+1) * (uav1_waypoint[0].pose.position.y - Ydistance10 - uav1_current_pose.pose.position.y) / ApproachNumber;
+            uav1_approach_position[i].pose.position.y = uav1_current_pose.pose.position.y + (i+1) * (uav1_waypoint[0].pose.position.y - YDistance10 - uav1_current_pose.pose.position.y) / ApproachNumber;
             uav1_approach_position[i].pose.position.z = Uav1Height;
 
             uav2_approach_position[i].pose.position.x = uav2_current_pose.pose.position.x + (i+1) * (uav2_waypoint[0].pose.position.x - XDistance20 - uav2_current_pose.pose.position.x) / ApproachNumber;
-            uav2_approach_position[i].pose.position.y = uav2_current_pose.pose.position.y + (i+1) * (uav2_waypoint[0].pose.position.y - Ydistance20 - uav2_current_pose.pose.position.y) / ApproachNumber;
+            uav2_approach_position[i].pose.position.y = uav2_current_pose.pose.position.y + (i+1) * (uav2_waypoint[0].pose.position.y - YDistance20 - uav2_current_pose.pose.position.y) / ApproachNumber;
             uav2_approach_position[i].pose.position.z = Uav2Height;
         }
         CurrentTime = ros::Time::now();
         ApproachPositionReady = 1;
+        ROS_INFO("Approach position is ready!");
     }
     else if((CurrentTime - StartTime) < ros::Duration(ApproachNumber*UnitTime))
     {
@@ -267,20 +278,36 @@ void followWaypointFunction()
 
     if(i >= 0 && i < WaypointNumber1)
     {
-        uav1_local_pos_pub.publish(uav1_waypoint[i]);
+        geometry_msgs::PoseStamped TempPosition;
+        TempPosition.pose.position.x = uav1_waypoint[i].pose.position.x - XDistance10;
+        TempPosition.pose.position.y = uav1_waypoint[i].pose.position.y - YDistance10;
+        TempPosition.pose.position.z = uav1_waypoint[i].pose.position.z - ZDistance10;
+        uav1_local_pos_pub.publish(TempPosition);
     }
     else
     {
-        uav1_local_pos_pub.publish(uav1_waypoint[WaypointNumber1 - 1]);
+        geometry_msgs::PoseStamped TempPosition;
+        TempPosition.pose.position.x = uav1_waypoint[WaypointNumber1 - 1].pose.position.x - XDistance10;
+        TempPosition.pose.position.y = uav1_waypoint[WaypointNumber1 - 1].pose.position.y - YDistance10;
+        TempPosition.pose.position.z = uav1_waypoint[WaypointNumber1 - 1].pose.position.z - ZDistance10;
+        uav1_local_pos_pub.publish(TempPosition);
     }
 
     if(i >= 0 && i < WaypointNumber2)
     {
-        uav2_local_pos_pub.publish(uav2_waypoint[i]);
+        geometry_msgs::PoseStamped TempPosition;
+        TempPosition.pose.position.x = uav2_waypoint[i].pose.position.x - XDistance20;
+        TempPosition.pose.position.y = uav2_waypoint[i].pose.position.y - YDistance20;
+        TempPosition.pose.position.z = uav2_waypoint[i].pose.position.z - ZDistance20;
+        uav2_local_pos_pub.publish(TempPosition);
     }
     else
     {
-        uav2_local_pos_pub.publish(uav2_waypoint[WaypointNumber2 - 1]);
+        geometry_msgs::PoseStamped TempPosition;
+        TempPosition.pose.position.x = uav2_waypoint[WaypointNumber1 - 1].pose.position.x - XDistance20;
+        TempPosition.pose.position.y = uav2_waypoint[WaypointNumber1 - 1].pose.position.y - YDistance20;
+        TempPosition.pose.position.z = uav2_waypoint[WaypointNumber1 - 1].pose.position.z - ZDistance20;
+        uav2_local_pos_pub.publish(TempPosition);
     }
 }
 
