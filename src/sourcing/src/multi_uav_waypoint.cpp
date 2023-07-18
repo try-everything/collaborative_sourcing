@@ -16,6 +16,10 @@
 #include <mavros_msgs/SetMode.h>
 #include <std_msgs/String.h>
 #include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
 
 using namespace std;
 
@@ -64,18 +68,24 @@ float XDistance20 = 10.0;
 float YDistance20 = 0.0;
 float ZDistance20 = 0.0;
 
-#define TEST 1
+//home offset
+float XDelta = -1000;
+float YDelta = 0;
+
+#define Proportion  0.01
+
+#define TEST 0
 
 //states
 static const int Approach = 1;
 static const int FollowWaypoint = 2;
 
-static const float UnitTime = 5.0;
+static const float UnitTime = 1.0;
 
-#define ApproachNumber 10
-#define WaypointNumber0 4
-#define WaypointNumber1 4
-#define WaypointNumber2 4
+#define ApproachNumber 100
+#define WaypointNumber0 5133
+#define WaypointNumber1 4223
+#define WaypointNumber2 4761
 
 /***************************variable definition**************************/
 
@@ -150,6 +160,27 @@ void uav2_velocity_cb(const geometry_msgs::TwistStamped::ConstPtr& msg){
 void approachFunction();
 void followWaypointFunction();
 
+vector<vector<int>> parseCSV(const string& filename)
+{
+    vector<vector<int>> data;
+    ifstream file(filename);
+    string line;
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        vector<int> row;
+        string cell;
+
+        while (getline(ss, cell, ',')) {
+            row.push_back(stoi(cell));
+        }
+
+        data.push_back(row);
+    }
+
+    return data;
+}
+
 void getWaypointFunction()
 {
     if(TEST == 1)
@@ -173,11 +204,41 @@ void getWaypointFunction()
             uav2_waypoint[i].pose.position.z = WaypointTest2[i][2];
         }
         WaypointReady = 1;
-        ROS_INFO("Waypoint position is ready!");
+        ROS_INFO("Waypoint position test is ready!");
     }
     else
     {
         //read file here
+        
+        // vector<vector<int>> data0 = parseCSV("....../src/sourcing/data/waypoint0.csv");
+        // vector<vector<int>> data1 = parseCSV("....../src/sourcing/data/waypoint1.csv");
+        // vector<vector<int>> data2 = parseCSV("....../src/sourcing/data/waypoint2.csv");
+        vector<vector<int>> data0 = parseCSV("/home/study/collaborative_sourcing/src/sourcing/data/waypoint0.csv");
+        vector<vector<int>> data1 = parseCSV("/home/study/collaborative_sourcing/src/sourcing/data/waypoint1.csv");
+        vector<vector<int>> data2 = parseCSV("/home/study/collaborative_sourcing/src/sourcing/data/waypoint2.csv");
+
+        for(int i = 0;i < WaypointNumber0; i++)
+        {
+            uav0_waypoint[i].pose.position.x = Proportion * (data0[i][0] + XDelta);
+            uav0_waypoint[i].pose.position.y = Proportion * (data0[i][1] + YDelta);
+            uav0_waypoint[i].pose.position.z = Uav0Height;
+        }
+        for(int i = 0;i < WaypointNumber1; i++)
+        {
+            uav1_waypoint[i].pose.position.x = Proportion * (data1[i][0] + XDelta);
+            uav1_waypoint[i].pose.position.y = Proportion * (data1[i][1] + YDelta);
+            uav1_waypoint[i].pose.position.z = Uav1Height;
+        }
+        for(int i = 0;i < WaypointNumber2; i++)
+        {
+            uav2_waypoint[i].pose.position.x = Proportion * (data2[i][0] + XDelta);
+            uav2_waypoint[i].pose.position.y = Proportion * (data2[i][1] + YDelta);
+            uav2_waypoint[i].pose.position.z = Uav2Height;
+        }
+
+        WaypointReady = 1;
+        ROS_INFO("Waypoint position is got!");
+    
     }
 }
 
@@ -236,6 +297,7 @@ void approachFunction()
 
         CurrentTime = ros::Time::now();
         int i = (int)((CurrentTime.toSec() - StartTime.toSec()) / UnitTime);
+        ROS_INFO("The number is %d", i);
         if(i >= 0 && i < ApproachNumber)
         {
             uav0_local_pos_pub.publish(uav0_approach_position[i]);
@@ -304,10 +366,15 @@ void followWaypointFunction()
     else
     {
         geometry_msgs::PoseStamped TempPosition;
-        TempPosition.pose.position.x = uav2_waypoint[WaypointNumber1 - 1].pose.position.x - XDistance20;
-        TempPosition.pose.position.y = uav2_waypoint[WaypointNumber1 - 1].pose.position.y - YDistance20;
-        TempPosition.pose.position.z = uav2_waypoint[WaypointNumber1 - 1].pose.position.z - ZDistance20;
+        TempPosition.pose.position.x = uav2_waypoint[WaypointNumber2 - 1].pose.position.x - XDistance20;
+        TempPosition.pose.position.y = uav2_waypoint[WaypointNumber2 - 1].pose.position.y - YDistance20;
+        TempPosition.pose.position.z = uav2_waypoint[WaypointNumber2 - 1].pose.position.z - ZDistance20;
         uav2_local_pos_pub.publish(TempPosition);
+    }
+
+    if (i>WaypointNumber0 && i>WaypointNumber1 && i>WaypointNumber2)
+    {
+        ROS_INFO("Mission complete!");
     }
 }
 
@@ -360,6 +427,7 @@ int main(int argc, char** argv){
     
     //get waypoint data here
     getWaypointFunction();
+    // char* path = getcwd(path,50);
 
     //the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
