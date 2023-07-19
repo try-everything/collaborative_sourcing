@@ -13,3 +13,6 @@ rosrun mavros mavsafety -n uav2/mavros arm
 TEST
 Proportion
 UnitTime
+
+
+face East

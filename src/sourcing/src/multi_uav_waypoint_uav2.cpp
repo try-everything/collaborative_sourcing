@@ -72,7 +72,7 @@ float ZDistance20 = 0.0;
 float XDelta = -1000;
 float YDelta = 0;
 
-#define Proportion  0.1
+#define Proportion  0.01
 
 #define TEST 0
 
@@ -121,8 +121,8 @@ ros::Time CurrentTime;
 ros::Time StartTime;
 
 //different height to avoid collision
-float Uav0Height = 5.0;
-float Uav1Height = 10.0;
+float Uav0Height = 10.0;
+float Uav1Height = 20.0;
 float Uav2Height = 15.0;
 
 /************************callback function definition********************/
@@ -431,23 +431,25 @@ int main(int argc, char** argv){
     
     //get waypoint data here
     getWaypointFunction();
+    // char* path = getcwd(path,50);
 
     //the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
 
     //等待mavros节点连接到飞控
-    while(ros::ok() && !uav0_current_state.connected &&
-    !uav1_current_state.connected && !uav2_current_state.connected)
+    // while(ros::ok() && !uav0_current_state.connected &&
+    // !uav1_current_state.connected && !uav2_current_state.connected)
+    // {
+    //     ros::spinOnce();
+    //     rate.sleep();
+        
+    // }
+    while(ros::ok() && !uav2_current_state.connected)
     {
         ros::spinOnce();
         rate.sleep();
         
     }
-    // while(ros::ok() && !uav2_current_state.connected)
-    // {
-    //     ros::spinOnce();
-    //     rate.sleep(); 
-    // }
     ROS_INFO("Connect success!");
     StartTime = ros::Time::now();
     CurrentTime = StartTime;
@@ -457,11 +459,11 @@ int main(int argc, char** argv){
     while(ros::ok())
     {
         //
-        if( uav0_current_state.mode == "OFFBOARD" &&
-        uav1_current_state.mode == "OFFBOARD" &&
-        uav2_current_state.mode == "OFFBOARD" &&
-        SendPointFlag == 0)
-        // if(uav2_current_state.mode == "OFFBOARD" && SendPointFlag == 0)
+        // if( uav0_current_state.mode == "OFFBOARD" &&
+        // uav1_current_state.mode == "OFFBOARD" &&
+        // uav2_current_state.mode == "OFFBOARD" &&
+        // SendPointFlag == 0)
+        if(uav2_current_state.mode == "OFFBOARD" && SendPointFlag == 0)
         {
             SendPointFlag = 1;
             StartTime = ros::Time::now();
@@ -481,8 +483,6 @@ int main(int argc, char** argv){
             CurrentTime = ros::Time::now();
             if(CurrentTime.toSec() - StartTime.toSec() > 1.0)
             {
-                ROS_INFO("Uav0 x : %f", uav0_current_pose.pose.position.x);
-                ROS_INFO("Uav0 y : %f", uav0_current_pose.pose.position.y);
                 ROS_INFO("Uav0 height : %f", uav0_current_pose.pose.position.z);
                 ROS_INFO("Uav1 height : %f", uav1_current_pose.pose.position.z);
                 ROS_INFO("Uav2 height : %f", uav2_current_pose.pose.position.z);
