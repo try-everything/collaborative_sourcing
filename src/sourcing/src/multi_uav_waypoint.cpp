@@ -1,7 +1,7 @@
 /*************************************************************************
 @file           multi_uav_demo.cpp
 @date           2023/06/30 11:42
-                2023/07/06 15:36
+                2023/07/21 16:36
 @author         wuminjiang
 @email          wuminjiang@sia.cn
 @description    a state machine demo for testing that one node controls 3
@@ -79,6 +79,7 @@ float YDelta = 0;
 //states
 static const int Approach = 1;
 static const int FollowWaypoint = 2;
+static const int FollowSourceWaypoint = 3;
 
 static const float UnitTime = 0.1;
 
@@ -86,6 +87,9 @@ static const float UnitTime = 0.1;
 #define WaypointNumber0 5133
 #define WaypointNumber1 4223
 #define WaypointNumber2 4761
+#define SourceWaypointNumber0 1155
+#define SourceWaypointNumber1 1754
+#define SourceWaypointNumber2 1677
 
 /***************************variable definition**************************/
 
@@ -105,6 +109,10 @@ geometry_msgs::PoseStamped uav2_approach_position[ApproachNumber];
 geometry_msgs::PoseStamped uav0_waypoint[WaypointNumber0];
 geometry_msgs::PoseStamped uav1_waypoint[WaypointNumber1];
 geometry_msgs::PoseStamped uav2_waypoint[WaypointNumber2];
+
+geometry_msgs::PoseStamped uav0_source_waypoint[SourceWaypointNumber0];
+geometry_msgs::PoseStamped uav1_source_waypoint[SourceWaypointNumber1];
+geometry_msgs::PoseStamped uav2_source_waypoint[SourceWaypointNumber2];
 
 #if TEST == 1
 float WaypointTest0[WaypointNumber0][3] = {{5, 10, 1}, {4, 11, 1}, {6, 13, 1}, {0, 15, 1}};
@@ -159,6 +167,7 @@ void uav2_velocity_cb(const geometry_msgs::TwistStamped::ConstPtr& msg){
 /****************************function define*****************************/
 void approachFunction();
 void followWaypointFunction();
+void followSourceWaypointFunction();
 
 vector<vector<int>> parseCSV(const string& filename)
 {
@@ -236,6 +245,29 @@ void getWaypointFunction()
             uav2_waypoint[i].pose.position.z = Uav2Height;
         }
 
+        vector<vector<int>> Sourcedata0 = parseCSV("/home/study/collaborative_sourcing/src/sourcing/data/SourceWaypoint0.csv");
+        vector<vector<int>> Sourcedata1 = parseCSV("/home/study/collaborative_sourcing/src/sourcing/data/SourceWaypoint1.csv");
+        vector<vector<int>> Sourcedata2 = parseCSV("/home/study/collaborative_sourcing/src/sourcing/data/SourceWaypoint2.csv");
+
+        for(int i = 0;i < SourceWaypointNumber0; i++)
+        {
+            uav0_source_waypoint[i].pose.position.x = Proportion * (Sourcedata0[i][0] + XDelta);
+            uav0_source_waypoint[i].pose.position.y = Proportion * (Sourcedata0[i][1] + YDelta);
+            uav0_source_waypoint[i].pose.position.z = Uav0Height;
+        }
+        for(int i = 0;i < SourceWaypointNumber1; i++)
+        {
+            uav1_source_waypoint[i].pose.position.x = Proportion * (Sourcedata1[i][0] + XDelta);
+            uav1_source_waypoint[i].pose.position.y = Proportion * (Sourcedata1[i][1] + YDelta);
+            uav1_source_waypoint[i].pose.position.z = Uav1Height;
+        }
+        for(int i = 0;i < SourceWaypointNumber2; i++)
+        {
+            uav2_source_waypoint[i].pose.position.x = Proportion * (Sourcedata2[i][0] + XDelta);
+            uav2_source_waypoint[i].pose.position.y = Proportion * (Sourcedata2[i][1] + YDelta);
+            uav2_source_waypoint[i].pose.position.z = Uav2Height;
+        }
+
         WaypointReady = 1;
         ROS_INFO("Waypoint position is got!");
     
@@ -257,7 +289,10 @@ void stateMachineFunction()
         }
         break;
     
-        // case Land:
+        case FollowSourceWaypoint:
+        {
+            followSourceWaypointFunction();
+        }
         break;
     }
 }
@@ -297,7 +332,7 @@ void approachFunction()
 
         CurrentTime = ros::Time::now();
         int i = (int)((CurrentTime.toSec() - StartTime.toSec()) / UnitTime);
-        ROS_INFO("The number is %d", i);
+        ROS_INFO("The approach number is %d", i);
         if(i >= 0 && i < ApproachNumber)
         {
             uav0_local_pos_pub.publish(uav0_approach_position[i]);
@@ -378,10 +413,69 @@ void followWaypointFunction()
     }
     else
     {
-        ROS_INFO("The number is %d", i);
+        ROS_INFO("The boundary number is %d", i);
     }
 }
 
+
+void followSourceWaypointFunction()
+{
+    //wait to edit here 
+    CurrentTime = ros::Time::now();
+    int i = (int)((CurrentTime.toSec() - StartTime.toSec()) / UnitTime);
+
+    if(i >= 0 && i < WaypointNumber0)
+    {
+        uav0_local_pos_pub.publish(uav0_waypoint[i]);
+    }
+    else
+    {
+        uav0_local_pos_pub.publish(uav0_waypoint[WaypointNumber0 - 1]);
+    }
+
+    if(i >= 0 && i < WaypointNumber1)
+    {
+        geometry_msgs::PoseStamped TempPosition;
+        TempPosition.pose.position.x = uav1_waypoint[i].pose.position.x - XDistance10;
+        TempPosition.pose.position.y = uav1_waypoint[i].pose.position.y - YDistance10;
+        TempPosition.pose.position.z = uav1_waypoint[i].pose.position.z - ZDistance10;
+        uav1_local_pos_pub.publish(TempPosition);
+    }
+    else
+    {
+        geometry_msgs::PoseStamped TempPosition;
+        TempPosition.pose.position.x = uav1_waypoint[WaypointNumber1 - 1].pose.position.x - XDistance10;
+        TempPosition.pose.position.y = uav1_waypoint[WaypointNumber1 - 1].pose.position.y - YDistance10;
+        TempPosition.pose.position.z = uav1_waypoint[WaypointNumber1 - 1].pose.position.z - ZDistance10;
+        uav1_local_pos_pub.publish(TempPosition);
+    }
+
+    if(i >= 0 && i < WaypointNumber2)
+    {
+        geometry_msgs::PoseStamped TempPosition;
+        TempPosition.pose.position.x = uav2_waypoint[i].pose.position.x - XDistance20;
+        TempPosition.pose.position.y = uav2_waypoint[i].pose.position.y - YDistance20;
+        TempPosition.pose.position.z = uav2_waypoint[i].pose.position.z - ZDistance20;
+        uav2_local_pos_pub.publish(TempPosition);
+    }
+    else
+    {
+        geometry_msgs::PoseStamped TempPosition;
+        TempPosition.pose.position.x = uav2_waypoint[WaypointNumber2 - 1].pose.position.x - XDistance20;
+        TempPosition.pose.position.y = uav2_waypoint[WaypointNumber2 - 1].pose.position.y - YDistance20;
+        TempPosition.pose.position.z = uav2_waypoint[WaypointNumber2 - 1].pose.position.z - ZDistance20;
+        uav2_local_pos_pub.publish(TempPosition);
+    }
+    
+    if (i>WaypointNumber0 && i>WaypointNumber1 && i>WaypointNumber2)
+    {
+        ROS_INFO("Mission complete!");
+    }
+    else
+    {
+        ROS_INFO("The boundary number is %d", i);
+    }
+}
 /****************************main function*******************************/
 int main(int argc, char** argv){
     //ROS node init
