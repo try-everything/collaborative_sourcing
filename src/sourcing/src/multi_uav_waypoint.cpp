@@ -319,7 +319,7 @@ void approachFunction()
         ApproachPositionReady = 1;
         ROS_INFO("Approach position is ready!");
     }
-    else if((CurrentTime - StartTime) < ros::Duration(ApproachNumber*UnitTime))
+    else if((CurrentTime - StartTime) < ros::Duration((ApproachNumber+1)*UnitTime))
     {
         if(ApproachPositionReady == 0)
         {
