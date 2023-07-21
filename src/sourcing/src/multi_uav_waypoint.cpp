@@ -409,7 +409,10 @@ void followWaypointFunction()
     
     if (i>WaypointNumber0 && i>WaypointNumber1 && i>WaypointNumber2)
     {
-        ROS_INFO("Mission complete!");
+        ROS_INFO("Boundary mission complete!");
+        current_mission_state = FollowSourceWaypoint;
+        StartTime = ros::Time::now();
+        CurrentTime = StartTime;
     }
     else
     {
@@ -424,56 +427,56 @@ void followSourceWaypointFunction()
     CurrentTime = ros::Time::now();
     int i = (int)((CurrentTime.toSec() - StartTime.toSec()) / UnitTime);
 
-    if(i >= 0 && i < WaypointNumber0)
+    if(i >= 0 && i < SourceWaypointNumber0)
     {
-        uav0_local_pos_pub.publish(uav0_waypoint[i]);
+        uav0_local_pos_pub.publish(uav0_source_waypoint[i]);
     }
     else
     {
-        uav0_local_pos_pub.publish(uav0_waypoint[WaypointNumber0 - 1]);
+        uav0_local_pos_pub.publish(uav0_source_waypoint[SourceWaypointNumber0 - 1]);
     }
 
-    if(i >= 0 && i < WaypointNumber1)
+    if(i >= 0 && i < SourceWaypointNumber1)
     {
         geometry_msgs::PoseStamped TempPosition;
-        TempPosition.pose.position.x = uav1_waypoint[i].pose.position.x - XDistance10;
-        TempPosition.pose.position.y = uav1_waypoint[i].pose.position.y - YDistance10;
-        TempPosition.pose.position.z = uav1_waypoint[i].pose.position.z - ZDistance10;
+        TempPosition.pose.position.x = uav1_source_waypoint[i].pose.position.x - XDistance10;
+        TempPosition.pose.position.y = uav1_source_waypoint[i].pose.position.y - YDistance10;
+        TempPosition.pose.position.z = uav1_source_waypoint[i].pose.position.z - ZDistance10;
         uav1_local_pos_pub.publish(TempPosition);
     }
     else
     {
         geometry_msgs::PoseStamped TempPosition;
-        TempPosition.pose.position.x = uav1_waypoint[WaypointNumber1 - 1].pose.position.x - XDistance10;
-        TempPosition.pose.position.y = uav1_waypoint[WaypointNumber1 - 1].pose.position.y - YDistance10;
-        TempPosition.pose.position.z = uav1_waypoint[WaypointNumber1 - 1].pose.position.z - ZDistance10;
+        TempPosition.pose.position.x = uav1_source_waypoint[SourceWaypointNumber1 - 1].pose.position.x - XDistance10;
+        TempPosition.pose.position.y = uav1_source_waypoint[SourceWaypointNumber1 - 1].pose.position.y - YDistance10;
+        TempPosition.pose.position.z = uav1_source_waypoint[SourceWaypointNumber1 - 1].pose.position.z - ZDistance10;
         uav1_local_pos_pub.publish(TempPosition);
     }
 
-    if(i >= 0 && i < WaypointNumber2)
+    if(i >= 0 && i < SourceWaypointNumber2)
     {
         geometry_msgs::PoseStamped TempPosition;
-        TempPosition.pose.position.x = uav2_waypoint[i].pose.position.x - XDistance20;
-        TempPosition.pose.position.y = uav2_waypoint[i].pose.position.y - YDistance20;
-        TempPosition.pose.position.z = uav2_waypoint[i].pose.position.z - ZDistance20;
+        TempPosition.pose.position.x = uav2_source_waypoint[i].pose.position.x - XDistance20;
+        TempPosition.pose.position.y = uav2_source_waypoint[i].pose.position.y - YDistance20;
+        TempPosition.pose.position.z = uav2_source_waypoint[i].pose.position.z - ZDistance20;
         uav2_local_pos_pub.publish(TempPosition);
     }
     else
     {
         geometry_msgs::PoseStamped TempPosition;
-        TempPosition.pose.position.x = uav2_waypoint[WaypointNumber2 - 1].pose.position.x - XDistance20;
-        TempPosition.pose.position.y = uav2_waypoint[WaypointNumber2 - 1].pose.position.y - YDistance20;
-        TempPosition.pose.position.z = uav2_waypoint[WaypointNumber2 - 1].pose.position.z - ZDistance20;
+        TempPosition.pose.position.x = uav2_source_waypoint[SourceWaypointNumber2 - 1].pose.position.x - XDistance20;
+        TempPosition.pose.position.y = uav2_source_waypoint[SourceWaypointNumber2 - 1].pose.position.y - YDistance20;
+        TempPosition.pose.position.z = uav2_source_waypoint[SourceWaypointNumber2 - 1].pose.position.z - ZDistance20;
         uav2_local_pos_pub.publish(TempPosition);
     }
     
-    if (i>WaypointNumber0 && i>WaypointNumber1 && i>WaypointNumber2)
+    if (i>SourceWaypointNumber0 && i>SourceWaypointNumber1 && i>SourceWaypointNumber2)
     {
         ROS_INFO("Mission complete!");
     }
     else
     {
-        ROS_INFO("The boundary number is %d", i);
+        ROS_INFO("The source number is %d", i);
     }
 }
 /****************************main function*******************************/
