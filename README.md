@@ -19,7 +19,7 @@ For real run.
 For real run.(Single uav)
 
 ### multi_uav_mavros_sitl
-For gazebo simuzation.
+For gazebo simulation.
 
 # switch to OFFBOARD and ARMED (Terminal)
 rosrun mavros mavsys -n uav0/mavros mode -c OFFBOARD
